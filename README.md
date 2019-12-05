@@ -1,4 +1,3 @@
-TODO: rewrite this file
 # Drupal Commerce plugin for Paylike payments
 
 This plugin is *not* developed or maintained by Paylike but kindly made
