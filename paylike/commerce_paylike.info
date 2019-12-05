@@ -1,0 +1,6 @@
+name = Commerce Paylike
+description = Provides a Paylike payment method for Drupal Commerce.
+package = Commerce (contrib)
+dependencies[] = commerce_payment
+dependencies[] = libraries
+core = 7.x
