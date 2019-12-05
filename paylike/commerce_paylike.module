@@ -1,0 +1,491 @@
+<?php
+
+module_load_include('inc', 'commerce_paylike', 'commerce_paylike.admin');
+
+/**
+ * Implements hook_libraries_info().
+ */
+function commerce_paylike_libraries_info() {
+  $libraries['paylike'] = array(
+    'name' => 'Paylike PHP Library',
+    'vendor url' => 'https://paylike.io',
+    'download url' => 'https://github.com/paylike/php-api/releases',
+    'download file url' => 'https://github.com/paylike/php-api/archive/v1.0.5.tar.gz',
+    'version arguments' => array(
+      'file' => 'composer.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+      'lines' => 4,
+    ),
+    'versions' => array(
+      '1.0.5' => array(
+        'files' => array(
+          'php' => array(
+            'init.php',
+          )
+        ),
+        'paylike_api_version' => '2019-10-17'
+      )
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_paylike_menu() {
+  $transaction_url = 'admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction';
+  $items[$transaction_url . '/refund'] = array(
+    'title' => 'Refund',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_paylike_refund_form', 3, 5),
+    'access callback' => 'commerce_paylike_access_refund',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 1,
+    'file' => 'commerce_paylike.admin.inc',
+  );
+  $items[$transaction_url . '/capture'] = array(
+    'title' => 'Capture',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_paylike_capture_form', 3, 5),
+    'access callback' => 'commerce_paylike_access_capture',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 1,
+    'file' => 'commerce_paylike.admin.inc',
+  );
+  $items[$transaction_url . '/void'] = array(
+    'title' => 'Void',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_paylike_void_form', 3, 5),
+    'access callback' => 'commerce_paylike_access_void',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 1,
+    'file' => 'commerce_paylike.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Access callback for processing returns.
+ */
+function commerce_paylike_access_refund($order, $transaction) {
+  // Non-paylike transactions.
+  if ($transaction->payment_method != 'commerce_paylike') {
+    return false;
+  }
+
+  // Don't allow refunds on fully refunded transactions.
+  if (!empty($transaction->data['paylike']['amount_refunded'])) {
+    if ($transaction->data['paylike']['amount_refunded'] >= $transaction->amount) {
+      return false;
+    }
+  }
+
+  // Allow refunds only for "payment" type transactions.
+  if (!isset($transaction->data['paylike']['type']) || $transaction->data['paylike']['type'] != 'payment') {
+    return false;
+  }
+
+  // Don't allow refunds for unsuccessful transactions.
+  if ($transaction->status != COMMERCE_PAYMENT_STATUS_SUCCESS) {
+    return false;
+  }
+
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Access callback for payments void.
+ */
+function commerce_paylike_access_void($order, $transaction) {
+  // Non-paylike transactions.
+  if ($transaction->payment_method != 'commerce_paylike') {
+    return false;
+  }
+
+  // Only delayed payments can be voided.
+  if (!isset($transaction->data['paylike']['mode']) || $transaction->data['paylike']['mode'] != COMMERCE_CREDIT_AUTH_ONLY) {
+    return false;
+  }
+
+  // Don't allow void on fully voided transactions.
+  if (!empty($transaction->data['paylike']['amount_voided'])) {
+    if ($transaction->data['paylike']['amount_voided'] >= $transaction->amount) {
+      return false;
+    }
+  }
+
+  // Don't allow void on fully captured transactions
+  if (!empty($transaction->data['paylike']['amount_captured'])) {
+    if ($transaction->data['paylike']['amount_captured'] >= $transaction->amount) {
+      return false;
+    }
+  }
+
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Access callback for payments void.
+ */
+function commerce_paylike_access_capture($order, $transaction) {
+  // Non-paylike transactions.
+  if ($transaction->payment_method != 'commerce_paylike') {
+    return false;
+  }
+
+  // Only delayed payments can be captured.
+  if (!isset($transaction->data['paylike']['mode']) || $transaction->data['paylike']['mode'] != COMMERCE_CREDIT_AUTH_ONLY) {
+    return false;
+  }
+
+  // Don't allow captures on fully captured transactions.
+  if (!empty($transaction->data['paylike']['amount_captured'])) {
+    if ($transaction->data['paylike']['amount_captured'] >= $transaction->amount) {
+      return false;
+    }
+  }
+
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_paylike_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['commerce_paylike'] = array(
+    'title' => t('Paylike'),
+    'description' => t('Provides a Paylike payment method.'),
+    'active' => TRUE,
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Implements hook_commerce_payment_method_info_alter().
+ */
+function commerce_paylike_commerce_payment_method_info_alter(&$payment_methods) {
+  if (isset($payment_methods['commerce_paylike'])) {
+    $paylike = &$payment_methods['commerce_paylike'];
+    $settings = _commerce_paylike_load_settings();
+    if (!empty($settings['payment_method_title'])) $paylike['title'] = $settings['payment_method_title'];
+  }
+}
+
+/**
+ * Payment method callback: submit form.
+ */
+function commerce_paylike_submit_form(&$payment_method, $pane_values, $checkout_pane, $order) {
+  global $language, $conf;
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $settings = $payment_method['settings'];
+  $commerce_info = system_get_info('module', 'commerce');
+  $title = !empty($settings['popup_title']) ? $settings['popup_title'] : $conf['site_name'];
+  $user_profile = entity_metadata_wrapper('commerce_customer_profile', $order_wrapper->commerce_customer_billing->value());
+  $address = $user_profile->commerce_customer_address->value();
+  $currency = $order_wrapper->commerce_order_total->currency_code->value();
+
+  $products = [];
+  foreach ($order_wrapper->commerce_line_items->value() as $line_item) {
+    if ($line_item->type != 'product') continue;
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $product = $line_item_wrapper->commerce_product->value();
+    $products[$product->sku] = array(
+      'SKU' => $product->sku,
+      'title' => $product->title,
+      'price' => commerce_currency_format($line_item_wrapper->commerce_unit_price->amount->value(), $currency),
+      'quantity' => $line_item->quantity,
+      'total' => commerce_currency_format($line_item_wrapper->commerce_total->amount->value(), $currency),
+    );
+  }
+
+  // Paylike popup settings
+  $js_config = [
+    'public_key' => _commerce_paylike_get_key('public'),
+    'config' => [
+      'currency' => $currency,
+      'amount' => $order_wrapper->commerce_order_total->amount->value(),
+      'locale' => $language->language,
+      'title' => $title,
+      'descriptor' => t("Order #@order_id", array("@order_id" => $order->order_id)),
+      'custom' => array(
+        'email' => $order->mail,
+        'orderId' => $order->order_id,
+        'products' => $products,
+        'customer' => array(
+          'email' => $order->mail,
+          'IP' => ip_address(),
+          'name' => $address['name_line'],
+          'phoneNo' => '', // No phone information
+          'address' => implode(', ', [
+            $address['postal_code'],
+            $address['country'],
+            $address['locality'],
+            $address['thoroughfare'],
+            $address['premise']
+          ]),
+        ),
+        'platform' => array(
+          'name' => 'Drupal',
+          'version' => VERSION,
+        ),
+        'ecommerce' => array(
+          'name' => 'Drupal Commerce',
+          'version' => $commerce_info['version'],
+        ),
+      ),
+    ],
+  ];
+  $form['#attached']['js']['https://sdk.paylike.io/3.js'] = ['type' => 'external'];
+  $form['#attached']['js'][] = ['data' => ['commerce_paylike' => $js_config], 'type' => 'setting'];
+  $form['#attached']['js'][] = drupal_get_path('module', 'commerce_paylike') . '/commerce_paylike.js';
+  $form['#attached']['css'][] = drupal_get_path('module', 'commerce_paylike') . '/commerce_paylike.css';
+
+  // Button for showing Paylike popup
+  $form['paylike_button'] = [
+    '#type' => 'button',
+    '#default_value' => t('Enter credit card details'),
+    '#attributes' => [
+      'class' => ['paylike-button'],
+    ],
+  ];
+  if (!empty($settings['payment_method_description'])) {
+    $form['paylike_button']['#prefix'] = '<div class="paylike-description">' . $settings['payment_method_description'] . '</div>';
+  }
+  // Hidden field for storing transaction ID
+  $form['paylike_transaction_id'] = array(
+    '#type' => 'hidden',
+    '#attributes' => array(
+      'id' => 'paylike_transaction_id',
+    ),
+    '#default_value' => isset($order->data['paylike_transaction_id']) ? $order->data['paylike_transaction_id'] : '',
+  );
+  return $form;
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function commerce_paylike_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  if (!isset($pane_values['paylike_transaction_id']) || empty($pane_values['paylike_transaction_id'])) {
+    form_set_error('', t('Payment failed'));
+    return false;
+  }
+}
+
+/**
+ * Payment method callback: submit form submission.
+ */
+function commerce_paylike_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  $transaction_id = $pane_values['paylike_transaction_id'];
+  $order->data['paylike_transaction_id'] = $transaction_id;
+
+  // Every attempted transaction should result in a new transaction entity being
+  // created for the order to log either the success or the failure.
+  commerce_paylike_transaction($payment_method, $order, $charge);
+}
+
+/**
+ * Creates an example payment transaction for the specified charge amount.
+ *
+ * @param $payment_method
+ *   The payment method instance object used to charge this payment.
+ * @param $order
+ *   The order object the payment applies to.
+ * @param $charge
+ *   An array indicating the amount and currency code to charge.
+ */
+function commerce_paylike_transaction($payment_method, $order, $charge) {
+  $transaction_id = $order->data['paylike_transaction_id'];
+
+  $transaction = commerce_payment_transaction_new('commerce_paylike', $order->order_id);
+  $transaction->instance_id = $payment_method['instance_id'];
+
+  // Get the transaction type (instant or delayed)
+  $txn_type = isset($payment_method['settings']['txn_type']) ? $payment_method['settings']['txn_type'] : COMMERCE_CREDIT_AUTH_CAPTURE;
+
+  $message = [];
+  // Set the transaction status based on the type of transaction this was.
+  switch ($txn_type) {
+    case COMMERCE_CREDIT_AUTH_ONLY:
+      $transaction->data['paylike']['mode'] = COMMERCE_CREDIT_AUTH_ONLY;
+      $paylike_transaction = _commerce_paylike_transaction_load($transaction_id);
+      $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+      $message[] = '<b>' . t('Payment authorized'). '</b> ';
+      break;
+    case COMMERCE_CREDIT_AUTH_CAPTURE:
+      $transaction->data['paylike']['mode'] = COMMERCE_CREDIT_AUTH_CAPTURE;
+      $paylike_transaction = _commerce_paylike_transaction_capture($transaction_id, $charge['amount']);
+      if ($paylike_transaction['successful']) {
+        $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      } else {
+        $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      }
+      $message[] ='<b>' . t('Payment accepted'). '</b> ';
+      break;
+  }
+
+  $transaction->remote_id = $transaction_id;
+  $transaction->amount = $paylike_transaction['amount'];
+  $transaction->currency_code = $paylike_transaction['currency'];
+  $transaction->data['paylike']['type'] = 'payment';
+
+  if (!$paylike_transaction['successful']) {
+    $message = [
+      '<b>' . t('Payment rejected'). ':</b> ' . check_plain($paylike_transaction['error']),
+    ];
+  }
+
+  if (isset($paylike_transaction['card'])) {
+    $card_details = $paylike_transaction['card'];
+    $expiry = new DateTime($card_details['expiry']);
+    $message[] = 'Last4: @number, exp.: @month/@year';
+    $transaction->message_variables = array(
+      '@number' => $card_details['last4'],
+      '@month' => $expiry->format('m'),
+      '@year' => $expiry->format('Y'),
+    );
+  }
+
+  $transaction->message = implode('<br />', $message);
+
+  commerce_payment_transaction_save($transaction);
+
+  return $transaction;
+}
+
+function _commerce_paylike_load_settings() {
+  static $settings = array();
+
+  if (!empty($settings)) {
+    return $settings;
+  }
+
+  if (commerce_payment_method_load('commerce_paylike') && rules_config_load('commerce_payment_commerce_paylike')) {
+    $payment_method = commerce_payment_method_instance_load('commerce_paylike|commerce_payment_commerce_paylike');
+  }
+
+  if (isset($payment_method)) {
+    $settings = $payment_method['settings'];
+  }
+
+  return $settings;
+}
+
+/**
+ * Returns a needed key.
+ * @param $settings Paylike payment method settings array.
+ * @param string $type Public or private.
+ * @return string
+ */
+function _commerce_paylike_get_key($type) {
+  $settings = _commerce_paylike_load_settings();
+  $test_mode = isset($settings['test_mode']) ? $settings['test_mode'] : true;
+  $mode = $test_mode ? 'test' : 'live';
+  $variable_name = 'api_key_'. $mode .'_' . $type;
+  return isset($settings[$variable_name]) ? $settings[$variable_name] : '';
+}
+
+/**
+ * Loads Paylike library
+ * @return \Paylike\Paylike
+ * @throws \Paylike\Exception\ApiException
+ */
+function _commerce_paylike_library_get() {
+  libraries_load('paylike');
+  $key = _commerce_paylike_get_key('private');
+  $paylike = new \Paylike\Paylike($key);
+  return $paylike;
+}
+
+/**
+ * Loads Paylike transaction.
+ * @param $id
+ * @return array|bool
+ */
+function _commerce_paylike_transaction_load($id) {
+  try {
+    $paylike = _commerce_paylike_library_get();
+    $transactions = $paylike->transactions();
+    $transaction = $transactions->fetch($id);
+    return $transaction;
+  } catch (\Paylike\Exception\ApiException $e) {
+    watchdog('commerce_paylike', t('Transaction @id not found. @message', array('@id' => $id, '@message' => $e->getMessage())));
+    return false;
+  }
+}
+
+/**
+ * Captures an amount of money from transaction.
+ * @param $id
+ * @param $amount
+ * @return array
+ */
+function _commerce_paylike_transaction_capture($id, $amount) {
+  try {
+    $paylike = _commerce_paylike_library_get();
+    $transactions = $paylike->transactions();
+    $transaction = $transactions->capture($id, array('amount' => $amount));
+    return $transaction;
+  } catch (\Paylike\Exception\ApiException $e) {
+    watchdog('commerce_paylike', t('Transaction @id capture failed. @message', array('@id' => $id, '@message' => $e->getMessage())));
+    return array(
+      'successful' => false,
+      'error' => $e->getMessage(),
+    );
+  }
+}
+
+/**
+ * Void an amount of money from transaction.
+ * @param $id
+ * @param $amount
+ *
+ * @return array
+ */
+function _commerce_paylike_transaction_void($id, $amount) {
+  try {
+    $paylike = _commerce_paylike_library_get();
+    $transactions = $paylike->transactions();
+    $transaction = $transactions->void($id, array('amount' => $amount));
+    return $transaction;
+  } catch (\Paylike\Exception\ApiException $e) {
+    watchdog('commerce_paylike', t('Transaction @id void failed. @message', array('@id' => $id, '@message' => $e->getMessage())));
+    return array(
+      'successful' => false,
+      'error' => $e->getMessage(),
+    );
+  }
+}
+
+/**
+ * Refunds an amount.
+ * @param $id
+ * @param $amount
+ * @return array
+ */
+function _commerce_paylike_transaction_refund($id, $amount) {
+  try {
+    $paylike = _commerce_paylike_library_get();
+    $transactions = $paylike->transactions();
+    $transaction = $transactions->refund($id, array('amount' => $amount));
+    return $transaction;
+  } catch (\Paylike\Exception\ApiException $e) {
+    watchdog('commerce_paylike', t('Transaction @id refund failed. @message', array('@id' => $id, '@message' => $e->getMessage())));
+    return array(
+      'successful' => false,
+      'error' => $e->getMessage(),
+    );
+  }
+}
