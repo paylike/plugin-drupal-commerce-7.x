@@ -14,10 +14,9 @@ Released under the GPL V3 license: https://opensource.org/licenses/GPL-3.0
 
 
 ## Installation
-
-1.Once you have installed Drupal Commerce on your Drupal setup, follow these simple steps:
-  Signup at (paylike.io) [https://paylike.io] (it’s free)
-
+ 
+   Once you have installed Drupal Commerce on your Drupal setup, follow these simple steps:
+   1. Signup at [paylike.io](https://paylike.io) (it’s free)
    1. Create a live account
    1. Create an app key for your Drupal website
    1. Upload the ```paylike.zip``` trough the Drupal Admin
