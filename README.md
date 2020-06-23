@@ -1,5 +1,4 @@
-# Drupal Commerce plugin for Paylike payments
-
+# Drupal Commerce plugin for Paylike [![Build Status](https://travis-ci.org/paylike/plugin-drupal-commerce-7.x.svg?branch=master)](https://travis-ci.org/paylike/plugin-drupal-commerce-7.x)
 This plugin is *not* developed or maintained by Paylike but kindly made
 available by a user.
 

@@ -1,6 +1,5 @@
 language: php
-
-dist: trusty
+dist: xenial
 
 php:
   - 7.2
@@ -10,9 +9,9 @@ addons:
 
 env:
   global:
-    - USE_STEWARD_MASTER=1 # During Steward 3.0 development always run against latest Steward master branch
+    - USE_STEWARD_MASTER=1
     - SELENIUM_SERVER_VERSION="3.8.1"
-    - CHROMEDRIVER_VERSION="2.36"
+    - CHROMEDRIVER_VERSION="2.40"
   matrix:
     - BROWSER=chrome
 
