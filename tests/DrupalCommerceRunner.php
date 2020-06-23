@@ -245,6 +245,7 @@ class DrupalCommerceRunner extends DrupalCommerceTestHelper
         $this->click('.paylike-button');
         $this->popupPaylike();
         $this->waitForElement("#edit-continue");
+        $this->waitElementDisappear('.paylike.overlay');
         $this->click("#edit-continue");
         $completedValue = $this->getText("#page-title");
         // because the title of the page matches the checkout title, we need to use the order received class on body
