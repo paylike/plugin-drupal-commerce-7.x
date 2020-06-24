@@ -6,7 +6,7 @@ Released under the GPL V3 license: https://opensource.org/licenses/GPL-3.0
 
 ## Supported Drupal Commerce versions
 
-[![Last succesfull test](https://log.derikon.ro/api/v1/log/read?tag=drupalcommerce7&view=svg&label=Ubercart&key=ecommerce&background=00b4ff)](https://log.derikon.ro/api/v1/log/read?tag=drupalcommerce7&view=html)
+[![Last succesfull test](https://log.derikon.ro/api/v1/log/read?tag=drupalcommerce7&view=svg&label=DrupalCommerce&key=ecommerce&background=00b4ff)](https://log.derikon.ro/api/v1/log/read?tag=drupalcommerce7&view=html)
 
 *The plugin has been tested with most versions of Drupal Commerce at every iteration. We recommend using the latest version of Drupal Commerce, but if that is not possible for some reason, test the plugin with your Drupal Commerce version and it would probably function properly.*
 
