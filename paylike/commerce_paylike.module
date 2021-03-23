@@ -218,7 +218,6 @@ function commerce_paylike_submit_form(&$payment_method, $pane_values, $checkout_
       'amount' => $order_wrapper->commerce_order_total->amount->value(),
       'locale' => $language->language,
       'title' => $title,
-      'descriptor' => t("Order #@order_id", array("@order_id" => $order->order_id)),
       'custom' => array(
         'email' => $order->mail,
         'orderId' => $order->order_id,
@@ -227,7 +226,6 @@ function commerce_paylike_submit_form(&$payment_method, $pane_values, $checkout_
           'email' => $order->mail,
           'IP' => ip_address(),
           'name' => $address['name_line'],
-          'phoneNo' => '', // No phone information
           'address' => implode(', ', [
             $address['postal_code'],
             $address['country'],
