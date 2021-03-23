@@ -247,7 +247,7 @@ function commerce_paylike_submit_form(&$payment_method, $pane_values, $checkout_
       ),
     ],
   ];
-  $form['#attached']['js']['https://sdk.paylike.io/3.js'] = ['type' => 'external'];
+  $form['#attached']['js']['https://sdk.paylike.io/6.js'] = ['type' => 'external'];
   $form['#attached']['js'][] = ['data' => ['commerce_paylike' => $js_config], 'type' => 'setting'];
   $form['#attached']['js'][] = drupal_get_path('module', 'commerce_paylike') . '/commerce_paylike.js';
   $form['#attached']['css'][] = drupal_get_path('module', 'commerce_paylike') . '/commerce_paylike.css';
