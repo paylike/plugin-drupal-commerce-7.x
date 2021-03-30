@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 
+## 1.0.9 - 2021-03-30
+### Updated
+- commerce_paylike.js - Hide 'Payment failed' error if payment success
+
 ## 1.0.8 - 2021-03-19
 ### Added
 - "changelog.txt" file for this plugin
