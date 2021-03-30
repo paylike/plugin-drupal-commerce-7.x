@@ -12,6 +12,8 @@
           console.log(response);
           $('.paylike-button').val(Drupal.t('Change credit card details'));
           $('#paylike_transaction_id').val(response.transaction.id);
+          // Hide 'Payment failed' error if payment success
+          $('div.fieldset-wrapper').find('div.error').hide();
         }
 
         $(this).click(function (event) {
