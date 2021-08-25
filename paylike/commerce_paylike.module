@@ -236,7 +236,6 @@ function commerce_paylike_submit_form(&$payment_method, $pane_values, $checkout_
       ],
       'locale' => $language->language,
       'title' => $title,
-      'description' => t("Order #@order_id", array("@order_id" => $order->order_id)),
       'custom' => array(
         'email' => $order->mail,
         'orderId' => $order->order_id,
