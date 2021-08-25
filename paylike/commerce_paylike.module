@@ -2,6 +2,9 @@
 
 module_load_include('inc', 'commerce_paylike', 'commerce_paylike.admin');
 
+/** Paylike module version. */
+define('PAYLIKE_MODULE_VERSION', '1.2.0');
+
 /**
  * Implements hook_libraries_info().
  */
@@ -196,6 +199,17 @@ function commerce_paylike_submit_form(&$payment_method, $pane_values, $checkout_
   $address = $user_profile->commerce_customer_address->value();
   $currency = $order_wrapper->commerce_order_total->currency_code->value();
 
+  /**
+   * Extract exponent from currency.
+   * We use a helper that contain code from paylike/php-api Currencies class.
+   * Includes from library folder not working.
+   */
+  require_once DRUPAL_ROOT . '/sites/all/modules/paylike/commerce_paylike_helper.php';
+  $allCurrencies = getAllCurrencies(); // helper function
+  $exponent = (isset($allCurrencies[$currency])) ? ($allCurrencies[$currency]['exponent']) : (null);
+  /** Get test module status: if test mode, then return 'true'. */
+  $paylike_test_active_status = isset($settings['test_mode']) ? true : false;
+
   $products = [];
   foreach ($order_wrapper->commerce_line_items->value() as $line_item) {
     if ($line_item->type != 'product') continue;
@@ -214,11 +228,15 @@ function commerce_paylike_submit_form(&$payment_method, $pane_values, $checkout_
   $js_config = [
     'public_key' => _commerce_paylike_get_key('public'),
     'config' => [
-      'currency' => $currency,
-      'amount' => $order_wrapper->commerce_order_total->amount->value(),
+      'test' => $paylike_test_active_status,
+      'amount' => [
+        'currency' => $currency,
+        'exponent' => $exponent,
+        'value' => (int)$order_wrapper->commerce_order_total->amount->value(),
+      ],
       'locale' => $language->language,
       'title' => $title,
-      'descriptor' => t("Order #@order_id", array("@order_id" => $order->order_id)),
+      'description' => t("Order #@order_id", array("@order_id" => $order->order_id)),
       'custom' => array(
         'email' => $order->mail,
         'orderId' => $order->order_id,
@@ -244,10 +262,13 @@ function commerce_paylike_submit_form(&$payment_method, $pane_values, $checkout_
           'name' => 'Drupal Commerce',
           'version' => $commerce_info['version'],
         ),
+        'module version' => [
+          'version' => PAYLIKE_MODULE_VERSION,
+        ],
       ),
     ],
   ];
-  $form['#attached']['js']['https://sdk.paylike.io/6.js'] = ['type' => 'external'];
+  $form['#attached']['js']['https://sdk.paylike.io/10.js'] = ['type' => 'external'];
   $form['#attached']['js'][] = ['data' => ['commerce_paylike' => $js_config], 'type' => 'setting'];
   $form['#attached']['js'][] = drupal_get_path('module', 'commerce_paylike') . '/commerce_paylike.js';
   $form['#attached']['css'][] = drupal_get_path('module', 'commerce_paylike') . '/commerce_paylike.css';

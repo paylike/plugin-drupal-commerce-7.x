@@ -10,6 +10,7 @@ Released under the GPL V3 license: https://opensource.org/licenses/GPL-3.0
 
 *The plugin has been tested with most versions of Drupal Commerce at every iteration. We recommend using the latest version of Drupal Commerce, but if that is not possible for some reason, test the plugin with your Drupal Commerce version and it would probably function properly.*
 
+Drupal framework version last tested on: 7.78
 
 ## Installation
 
@@ -46,17 +47,17 @@ Once you have installed Drupal Commerce on your Drupal setup, follow these simpl
 Under the Paylike payment method settings, you can:
  * Update the payment method text in the payment gateways list
  * Update the payment method description in the payment gateways list
- * Update the title that shows up in the payment popup 
+ * Update the title that shows up in the payment popup
  * Add test/live keys
  * Set payment mode (test/live)
  * Change the capture type (Instant/Delayed)
- 
+
  ## How to
- 
+
  1. Capture
- * In Instant mode, the orders are captured automatically
- * In delayed mode you can capture an order by using the Payment operations from an order. If available the capture operation will show up. (admin/commerce/orders/ORDER_ID/payment)
+    * In Instant mode, the orders are captured automatically
+    * In delayed mode you can capture an order by using the Payment operations from an order. If available the capture operation will show up. (admin/commerce/orders/ORDER_ID/payment)
  2. Refund
-   * You can refund an order by using the Payment operations from an order. If available the refund operation will show up. (admin/commerce/orders/ORDER_ID/payment)
+    * You can refund an order by using the Payment operations from an order. If available the refund operation will show up. (admin/commerce/orders/ORDER_ID/payment)
  3. Void
-   * You can void an order by using the Payment operations from an order. If available the void operation will show up. (admin/commerce/orders/ORDER_ID/payment)
+    * You can void an order by using the Payment operations from an order. If available the void operation will show up. (admin/commerce/orders/ORDER_ID/payment)
