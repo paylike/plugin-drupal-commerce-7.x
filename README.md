@@ -65,11 +65,11 @@ Under the Paylike payment method settings, you can:
 ## Available features
 
 1. Capture
-   * Opencart admin panel: full/partial capture
+   * Drupal admin panel: full/partial capture
    * Paylike admin panel: full/partial capture
 2. Refund
-   * Opencart admin panel: full/partial refund
+   * Drupal admin panel: full/partial refund
    * Paylike admin panel: full/partial refund
 3. Void
-   * Opencart admin panel: full void
+   * Drupal admin panel: full void
    * Paylike admin panel: full/partial void
