@@ -61,3 +61,15 @@ Under the Paylike payment method settings, you can:
     * You can refund an order by using the Payment operations from an order. If available the refund operation will show up. (admin/commerce/orders/ORDER_ID/payment)
  3. Void
     * You can void an order by using the Payment operations from an order. If available the void operation will show up. (admin/commerce/orders/ORDER_ID/payment)
+
+## Available features
+
+1. Capture
+   * Opencart admin panel: full/partial capture
+   * Paylike admin panel: full/partial capture
+2. Refund
+   * Opencart admin panel: full/partial refund
+   * Paylike admin panel: full/partial refund
+3. Void
+   * Opencart admin panel: full void
+   * Paylike admin panel: full/partial void
