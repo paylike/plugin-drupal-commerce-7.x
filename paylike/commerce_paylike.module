@@ -244,7 +244,6 @@ function commerce_paylike_submit_form(&$payment_method, $pane_values, $checkout_
           'email' => $order->mail,
           'IP' => ip_address(),
           'name' => $address['name_line'],
-          'phoneNo' => '', // No phone information
           'address' => implode(', ', [
             $address['postal_code'],
             $address['country'],
