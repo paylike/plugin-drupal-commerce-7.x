@@ -59,7 +59,7 @@
     cy.get(usernameInputSelector).type(username);
     cy.get(passwordInputSelector).type(`${password}{enter}`);
 
-    cy.wait(2000);
+    cy.wait(1000);
 });
 
 /**
