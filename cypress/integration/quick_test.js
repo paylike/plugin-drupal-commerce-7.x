@@ -62,7 +62,4 @@ describe('paylike plugin quick test', () => {
     /** Void */
     TestMethods.payWithSelectedCurrency(currency, 'void');
 
-    /** Partial Void */
-    TestMethods.payWithSelectedCurrency(currency, 'void', /*partialAmount*/ true);
-
 }); // describe
