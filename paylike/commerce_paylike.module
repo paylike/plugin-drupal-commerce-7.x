@@ -3,7 +3,7 @@
 module_load_include('inc', 'commerce_paylike', 'commerce_paylike.admin');
 
 /** Paylike module version. */
-define('PAYLIKE_MODULE_VERSION', '1.2.0');
+define('PAYLIKE_MODULE_VERSION', '7.x-1.2.0');
 
 /**
  * Implements hook_libraries_info().
