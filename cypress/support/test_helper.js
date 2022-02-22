@@ -21,7 +21,7 @@ export let PaylikeTestHelper = {
      */
      filterAndGetAmountInMinor($unfilteredAmount, currency) {
         /** Replace any character except numbers, commas, points */
-        var filtered = ($unfilteredAmount.text()).replace(/[^0-9,.]/g, '')
+        var filtered = ($unfilteredAmount.text()).replace(/[^0-9,.][a-z.]*/g, '')
         var matchPointFirst = filtered.match(/\..*,/g);
         var matchCommaFirst = filtered.match(/,.*\./g);
 
@@ -38,7 +38,6 @@ export let PaylikeTestHelper = {
         /** Get multiplier based on currency code. */
         var multiplier = PaylikeCurrencies.get_paylike_currency_multiplier(currency);
 
-        // return formattedAmount * multiplier;
         return Math.ceil(formattedAmount * multiplier);
     },
 
