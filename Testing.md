@@ -10,6 +10,7 @@ As you can see the plugin is bundled with Cypress testing on this repository. Yo
 * You need to have Paylike module installed and configured (**test keys** required)
 * You need to have some other currencies configured in store, then set them in `cypress.env.json` file (these will be used to make payments with every currency specified)
 * You also need to have an account with previous purchases for which you set the credentials in the `cypress.env.json` file
+* For changing currency in frontend you need to have installed commerce-multicurrency module, available at [drupal.org](https://www.drupal.org/project/commerce_multicurrency/releases)
 * *For testing purpose, product stock management and sending order emails need to be disabled (if applicable).*
 
 ## Getting started
