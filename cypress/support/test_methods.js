@@ -77,12 +77,7 @@ export var TestMethods = {
 
         /** Add to cart random product. */
         var randomInt = PaylikeTestHelper.getRandomInt(/*max*/ 1);
-        // cy.get('.node-readmore a').eq(randomInt).click();
-        // cy.wait(1000);
-
-        /** Add to cart. */
-        // cy.get('.commerce-add-to-cart #edit-submit').click();
-        cy.get('.commerce-add-to-cart #edit-submit').eq(randomInt).click();
+        cy.get('.commerce-add-to-cart input[id*=edit-submit]').eq(randomInt).click();
 
         /** Go to cart. */
         cy.get('.status  a').click();
@@ -194,12 +189,14 @@ export var TestMethods = {
      * Change shop currency from admin
      */
     changeShopCurrencyFromAdmin(currency) {
-        /** Go to edit shop page. */
-        cy.goToPage(this.ShopAdminUrl);
+        it(`Change shop currency from admin to "${currency}"`, () => {
+            /** Go to edit shop page. */
+            cy.goToPage(this.ShopAdminUrl);
 
-        /** Select currency & save. */
-        cy.selectOptionContaining('#edit-commerce-default-currency', currency);
-        cy.get('#edit-submit').click();
+            /** Select currency & save. */
+            cy.selectOptionContaining('#edit-commerce-default-currency', currency);
+            cy.get('#edit-submit').click();
+        });
     },
 
     /**
