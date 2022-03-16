@@ -3,5 +3,5 @@ description = Provides a Paylike payment method for Drupal Commerce.
 package = Commerce (contrib)
 dependencies[] = commerce_payment
 dependencies[] = libraries
-version = "7.x-1.2.0"
+version = "7.x-1.3.0"
 core = 7.x
